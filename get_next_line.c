@@ -6,7 +6,7 @@
 /*   By: yobourai <yobourai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/09 01:13:45 by yobourai          #+#    #+#             */
-/*   Updated: 2024/03/29 00:52:56 by yobourai         ###   ########.fr       */
+/*   Updated: 2024/03/30 20:53:16 by yobourai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,70 +16,34 @@
 // #include <fcntl.h>
 // #include <stdlib.h>
 #include "get_next_line.h"
-int ft_strlen(char *str)
+char *ft_strdup(char *ptr)
 {
+    char *str ;
     int i = 0;
-    
-	if(!str)
-		return (0);
-    while(str && str[i])
-        i++;
-    return i ;
-}
-char *ft_strjoin(char *ptr, char *str)
-{
-    int i = 0;
-    int j = 0;
-	int 	size;
-	char	*new;
-    if(!ptr)
-        return strdup(str);
-	size = ft_strlen(str) + ft_strlen(ptr);
-    new = malloc(size + 1);
-    if(!new)
-        return (NULL);
-    while(ptr && ptr[i])
+    str =malloc(ft_strlen(ptr) + 1);
+    while(ptr[i] && ptr)
     {
-        new[i] = ptr[i];
-        i++;            
-    }
-
-    while(str && str[j])
-        new[i++] = str[j++];
-    new[size] = '\0';
-    return new;
-}
-int  ft_strchr(char *str)
-{
-    int i ;
-    i = 0;       
-
-    while(str && str[i])
-    {
-        if(str[i] == '\n')
-          return (i + 1);
+        str[i] =ptr[i];
         i++;
     }
-    return 0;
+        str[i]='\0';
+    return str ;
 }
-char *ft_saveline(char *str, ssize_t nbyte)
+char *ft_saveline(char *str)
 {
 	char	*new;
     int 	i;
     i = 0;
 
-	int size = ft_strchr(str) + 1;
-
-    	new =str+ size;
+	int size = ft_strchr(str);
+    if (size == 0)
+        return NULL;
+    new = &str[size];
 	while(new && new[i])
          i++;
 	if (!i)
-	{
-		free(str);
-		str = NULL;
-		return (NULL);
-	}
-    char* ptr = malloc(i + 1);
+        ft_free(&str);
+    char* ptr = (char *)malloc(i + 1);
 	if (!ptr)
 		return (NULL);
     i=0;
@@ -89,16 +53,17 @@ char *ft_saveline(char *str, ssize_t nbyte)
         i++;
     }
     ptr[i] = '\0';
+    free(str);
     return ptr ;
 }
-char *ft_newline(char *ptr, ssize_t nbyte)
+char *ft_newline(char *ptr)
 {
     int i;
     char *str ;
     
 	i = 0;
 	int size =ft_strchr(ptr);
-    str =malloc(size+1);
+    str =malloc(size);
     if(!str )
         return NULL ;
     while(ptr && (ptr[i] && ptr[i] != '\n'))
@@ -106,10 +71,14 @@ char *ft_newline(char *ptr, ssize_t nbyte)
         str[i]=ptr[i];
         i++;
     }
-    str[i++]='\n';
-	str[i]='\0';
-    if(str && !nbyte)
-        return str ;
+    if(ft_strchr(ptr))
+    {
+                str[i]='\n';
+	        str[i+1]='\0';
+    }
+    else 
+        str[i] = '\0';
+    
 	return str;
 }
 char *get_next_line(int fd)
@@ -117,34 +86,38 @@ char *get_next_line(int fd)
     static char *ptr; 
     ssize_t     nbyte;
     char        *str;
-    int i;
     
     nbyte = BUFFER_SIZE;
-    str = malloc(BUFFER_SIZE + 1);
-    if(!str)
+    str = (char *)malloc(BUFFER_SIZE + 1);
+ if (fd < 0 || BUFFER_SIZE <= 0 || read(fd, 0, 0) < 0)
     {
         free(ptr);
+        free(str);
         ptr = NULL;
-        return NULL;
+        str = NULL;
+        return (NULL);
     }
+    if(!str)
+        ft_free(&ptr);
     while(nbyte>0)
     {
         nbyte = read(fd, str, BUFFER_SIZE);
+        str[nbyte] = '\0';
         ptr = ft_strjoin(ptr, str);
+        if (ft_strlen(ptr) == 0)
+            ft_free(&ptr);
         if (!ptr)
         {
             free(str);
             str= NULL ;
             return (NULL);
         }
-        if (ft_strchr(ptr))
+        if (ft_strchr(ptr) && nbyte != 0)
             break;
     }
-    free(str);
-        // if(!nbyte && str)
-        //      return str ;
-    str = ft_newline(ptr,nbyte);
-    ptr = ft_saveline(ptr,nbyte);
+    ft_free(&str);
+    str = ft_newline(ptr);
+    ptr = ft_saveline(ptr);
     return (str);
 }
  int main()
@@ -152,16 +125,26 @@ char *get_next_line(int fd)
     char *str;
     int fd;
     fd = open("txt.txt", O_RDONLY); 
-    printf("%s",get_next_line(fd));
-    printf("%s",get_next_line(fd));
-    printf("%s",get_next_line(fd));
-    printf("%s",get_next_line(fd));
-    printf("%s",get_next_line(fd));
-    printf("%s",get_next_line(fd));
-    printf("%s",get_next_line(fd));
-    printf("%s",get_next_line(fd));
-    printf("%s",get_next_line(fd));
-    printf("%s",get_next_line(fd));
-    printf("%s",get_next_line(fd));
-   
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
+    printf("%s", get_next_line(fd));
 }
